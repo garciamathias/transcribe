@@ -8,6 +8,13 @@ const nextConfig = {
   env: {
     OPENAI_API_KEY: process.env.OPENAI_API_KEY,
   },
+  // Augmenter la taille maximale des requêtes
+  api: {
+    bodyParser: {
+      sizeLimit: '25mb',
+    },
+    responseLimit: '25mb',
+  },
 };
 
 module.exports = nextConfig; 

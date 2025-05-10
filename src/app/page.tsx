@@ -19,6 +19,18 @@ export default function Home() {
     setIsUploading(true);
     
     try {
+      // Vérification de la taille du fichier (25MB max pour Whisper API)
+      if (file.size > 25 * 1024 * 1024) {
+        throw new Error('Le fichier est trop volumineux. Taille maximale: 25MB');
+      }
+
+      // Vérification du type de fichier
+      if (!file.type.startsWith('audio/')) {
+        throw new Error('Veuillez téléverser un fichier audio valide');
+      }
+
+      console.log(`Uploading file: ${file.name}, size: ${file.size}, type: ${file.type}`);
+      
       // Préparer les données à envoyer
       const formData = new FormData();
       formData.append('file', file);
@@ -29,20 +41,37 @@ export default function Home() {
       }
 
       // Appel à notre API de transcription
+      console.log('Sending request to API...');
       const response = await fetch('/api/transcribe', {
         method: 'POST',
         body: formData,
       });
 
-      const data = await response.json();
+      console.log('Response status:', response.status);
+      
+      // Vérifier si la réponse est vide
+      const text = await response.text();
+      if (!text) {
+        throw new Error('Réponse vide du serveur. Veuillez réessayer.');
+      }
+      
+      // Convertir le texte en JSON
+      let data;
+      try {
+        data = JSON.parse(text);
+      } catch (e) {
+        console.error('Failed to parse JSON response:', text);
+        throw new Error('Réponse invalide du serveur');
+      }
       
       if (!response.ok) {
         throw new Error(data.error || 'Une erreur est survenue lors de la transcription.');
       }
 
       setTranscription(data.transcription);
+      console.log('Transcription completed successfully');
     } catch (err: any) {
-      console.error('Error uploading file:', err);
+      console.error('Error processing file:', err);
       setError(err.message || 'Une erreur est survenue.');
     } finally {
       setIsUploading(false);

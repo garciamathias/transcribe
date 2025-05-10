@@ -12,9 +12,10 @@ export function middleware(request: NextRequest) {
     // Créer une nouvelle instance de NextResponse
     const response = NextResponse.next();
     
-    // Définir des en-têtes pour permettre un téléversement de fichier plus important
-    // Cela s'applique uniquement au serveur, pas au client
+    // Configurer les en-têtes pour accepter les gros fichiers et désactiver la mise en cache
     response.headers.set('Accept', '*/*');
+    response.headers.set('Cache-Control', 'no-store, no-cache, must-revalidate, proxy-revalidate');
+    response.headers.set('Connection', 'keep-alive');
     
     return response;
   }

@@ -1,6 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server';
 import OpenAI from 'openai';
 
+// Augmenter la taille maximale du corps de la requête
+export const config = {
+  api: {
+    bodyParser: {
+      sizeLimit: '25mb'
+    }
+  }
+};
+
 export async function POST(req: NextRequest) {
   try {
     const formData = await req.formData();
@@ -37,27 +46,48 @@ export async function POST(req: NextRequest) {
       apiKey: apiKey,
     });
 
-    // Créer un objet de type File compatible avec l'API OpenAI
-    const arrayBuffer = await file.arrayBuffer();
-    const buffer = Buffer.from(arrayBuffer);
-    
-    // Créer un fichier temporaire en mémoire
-    const fileObject = new File([buffer], file.name, { type: file.type });
-
-    // Appel à l'API de transcription
-    const transcription = await openai.audio.transcriptions.create({
-      file: fileObject,
-      model: 'whisper-1',
-    });
-
-    return NextResponse.json({ 
-      transcription: transcription.text 
-    });
+    try {
+      // Convertir le fichier en Blob avec le type MIME correct
+      const arrayBuffer = await file.arrayBuffer();
+      const fileBlob = new Blob([arrayBuffer], { type: file.type });
+      
+      // Créer un objet File avec un nom et un type
+      const fileObj = new File([fileBlob], file.name, { type: file.type });
+      
+      // Appel à l'API de transcription avec un try/catch dédié
+      const transcription = await openai.audio.transcriptions.create({
+        file: fileObj,
+        model: 'whisper-1',
+      });
+      
+      if (!transcription || !transcription.text) {
+        throw new Error('La transcription a échoué: pas de texte retourné');
+      }
+      
+      // Retourner la transcription
+      return NextResponse.json({ 
+        transcription: transcription.text,
+        success: true
+      });
+    } catch (apiError: any) {
+      console.error('OpenAI API error:', apiError);
+      
+      // Gérer les erreurs spécifiques de l'API OpenAI
+      if (apiError.status === 401) {
+        return NextResponse.json({ 
+          error: 'Clé API OpenAI invalide ou expirée' 
+        }, { status: 401 });
+      }
+      
+      return NextResponse.json({ 
+        error: `Erreur API OpenAI: ${apiError.message || 'Erreur inconnue'}` 
+      }, { status: 500 });
+    }
   } catch (error: any) {
-    console.error('Error transcribing audio:', error);
-    return NextResponse.json(
-      { error: error.message || 'Error transcribing audio' },
-      { status: 500 }
-    );
+    console.error('Error in transcription route:', error);
+    
+    return NextResponse.json({ 
+      error: `Erreur de transcription: ${error.message || 'Erreur inconnue'}` 
+    }, { status: 500 });
   }
 } 
