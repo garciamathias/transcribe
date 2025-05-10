@@ -1,16 +1,69 @@
 type TranscriptionDisplayProps = {
   transcription: string | null;
   error: string | null;
+  isStreaming?: boolean;
+  streamingStatus?: {
+    status: string;
+    message?: string;
+    currentSegment?: number;
+    totalSegments?: number;
+    progress?: number;
+  };
 };
 
 export default function TranscriptionDisplay({ 
   transcription, 
-  error 
+  error,
+  isStreaming = false,
+  streamingStatus
 }: TranscriptionDisplayProps) {
   if (error) {
     return (
       <div className="mt-6 p-4 bg-red-50 rounded-lg border border-red-100">
         <p className="text-sm text-red-600">{error}</p>
+      </div>
+    );
+  }
+
+  // Afficher le statut du streaming en cours
+  if (isStreaming && streamingStatus) {
+    return (
+      <div className="mt-6">
+        <div className="bg-gray-50 rounded-lg border border-gray-100">
+          <div className="p-3 border-b border-gray-100">
+            <h3 className="text-sm font-medium text-gray-700">
+              {streamingStatus.message || 'Transcription en cours...'}
+            </h3>
+            
+            {/* Barre de progression */}
+            {streamingStatus.currentSegment && streamingStatus.totalSegments && (
+              <div className="mt-2">
+                <div className="w-full bg-gray-200 rounded-full h-2.5">
+                  <div
+                    className="bg-blue-500 h-2.5 rounded-full transition-all duration-300"
+                    style={{ 
+                      width: `${(streamingStatus.currentSegment / streamingStatus.totalSegments) * 100}%` 
+                    }}
+                  ></div>
+                </div>
+                <p className="mt-1 text-xs text-gray-500 text-right">
+                  {streamingStatus.currentSegment}/{streamingStatus.totalSegments} segments
+                </p>
+              </div>
+            )}
+          </div>
+          
+          {/* Afficher la transcription partielle si disponible */}
+          {transcription && (
+            <div className="p-4 max-h-80 overflow-y-auto">
+              <p className="text-sm text-gray-700 whitespace-pre-wrap leading-relaxed">
+                {transcription}
+                {/* Indicateur de saisie clignotant */}
+                <span className="inline-block w-2 h-4 ml-1 bg-blue-500 animate-pulse"></span>
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     );
   }

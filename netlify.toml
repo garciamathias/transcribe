@@ -1,0 +1,37 @@
+[build]
+  command = "npm run build"
+  publish = ".next"
+
+# Configuration pour les fonctions serverless
+[functions]
+  # Augmenter le timeout pour laisser le temps à la transcription de s'exécuter
+  node_bundler = "esbuild"
+  included_files = ["node_modules/openai/**"]
+  external_node_modules = ["openai"]
+  
+# Augmenter les limites pour les requêtes
+[[plugins]]
+  package = "@netlify/plugin-nextjs"
+
+# Configuration des en-têtes pour gérer CORS et les grandes requêtes
+[[headers]]
+  for = "/api/*"
+    [headers.values]
+    Access-Control-Allow-Origin = "*"
+    Access-Control-Allow-Methods = "GET, POST, OPTIONS"
+    Access-Control-Allow-Headers = "Content-Type"
+    Cache-Control = "no-store, no-cache"
+
+# Configuration pour Edge Functions (optionnel)
+[build.environment]
+  NODE_VERSION = "18.17.0"
+  NPM_FLAGS = "--legacy-peer-deps"
+
+# Configuration pour gérer les gros fichiers
+[build.processing]
+  skip_processing = true
+
+# Augmenter la limite de taille pour les requêtes POST
+[functions."api/transcribe"]
+  included_files = ["node_modules/openai/**"]
+  node_bundler = "esbuild" 

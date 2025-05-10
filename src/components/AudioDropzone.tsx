@@ -4,9 +4,17 @@ import { useDropzone } from 'react-dropzone';
 type AudioDropzoneProps = {
   onFileUpload: (file: File) => void;
   isUploading: boolean;
+  streamingStatus?: {
+    status: string;
+    message?: string;
+  };
 };
 
-export default function AudioDropzone({ onFileUpload, isUploading }: AudioDropzoneProps) {
+export default function AudioDropzone({ 
+  onFileUpload, 
+  isUploading,
+  streamingStatus
+}: AudioDropzoneProps) {
   const [filePreview, setFilePreview] = useState<{ name: string; size: number } | null>(null);
 
   const onDrop = useCallback((acceptedFiles: File[]) => {
@@ -48,7 +56,14 @@ export default function AudioDropzone({ onFileUpload, isUploading }: AudioDropzo
         {isUploading ? (
           <div className="text-center py-4">
             <div className="inline-block animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-blue-500 mb-2"></div>
-            <p className="text-gray-500 font-medium">Transcription en cours...</p>
+            <p className="text-gray-500 font-medium">
+              {streamingStatus?.message || 'Transcription en cours...'}
+            </p>
+            {streamingStatus?.status === 'transcribing' && (
+              <p className="mt-1 text-xs text-gray-500">
+                Les résultats apparaîtront au fur et à mesure
+              </p>
+            )}
           </div>
         ) : filePreview ? (
           <div className="py-2">
